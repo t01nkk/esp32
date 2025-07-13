@@ -1,0 +1,27 @@
+{
+    "C_Cpp.intelliSenseEngine": "default",
+    "idf.espIdfPathWin": "C:\\Users\\Tartita\\esp\\v5.4.2\\esp-idf",
+    "idf.toolsPathWin": "C:\\Users\\Tartita\\.espressif",
+    "idf.pythonInstallPath": "C:\\Users\\Tartita\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+    "idf.portWin": "COM4",
+    "idf.openOcdConfigs": ["board/esp32s3-builtin.cfg"],
+    "idf.customExtraVars": {
+        "IDF_TARGET": "esp32s3"
+    },
+    "clangd.path": "C:\\Users\\Tartita\\.espressif\\tools\\esp-clang\\esp-18.1.2_20240912\\esp-clang\\bin\\clangd.exe",
+    "clangd.arguments": [
+        "--background-index",
+        "--query-driver=C:\\Users\\Tartita\\.espressif\\tools\\xtensa-esp-elf\\esp-14.2.0_20241119\\xtensa-esp-elf\\bin\\xtensa-esp32s3-elf-gcc.exe",
+        "--compile-commands-dir=c:\\Users\\Tartita\\Desktop\\Proyectos\\Proyectos\\ESP32-S3-Matrix\\blink\\build"
+    ],
+    "idf.flashType": "UART",
+    "files.associations": {
+        "atomic": "c",
+        "cstdint": "c",
+        "*.inc": "c",
+        "chrono": "c",
+        "variant": "c",
+        "stdlib.h": "c",
+        "random": "c"
+    }
+}
