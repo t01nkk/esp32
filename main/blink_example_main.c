@@ -25,7 +25,7 @@ static uint8_t s_led_state = 0;
 #ifdef CONFIG_BLINK_LED_STRIP
 static led_strip_handle_t led_strip;
 
-char inputString[13] = {'a', 'a', 'a', 's', 's', 's', 'd', 'd', 'd', 'w', 'w', 'w', '\0'};
+char inputString[64] = {'s', 's', 's', 'd', 'd', 'd', 'w', 'w', 'w', 'd', 'a', 's', 'd', 'd', 'a', 'w', 's', 'a', 's', 'd', 's', 'w', 's', 'd', 'w', 'd', 'w', 'd', 'w', 'w', 'a', 'w', 'a', 's', 'd', 'a', 's', 'd', 'd', 'a', 's', 'a', 's', 'd', 's', 'w', 's', 'a', 's', 'd', 's', 'w', 's', 'd', 'w', 'd', 'w', 'd', 'w', 'w', 'a', 'w', 'a', '\0'};
 
 int lastIndex = 34;
 float brightness = 0.5;
@@ -38,7 +38,6 @@ int headInit = 36;
 int tail = 35;
 
 int snake[65] = {-1}; // full snake populated entirely except final slot, used to keep track of snake size
-int snakeSlotTracker[64] = {0};
 
 // colorine
 int fruitR = 229;
@@ -72,14 +71,40 @@ int codeIntoCoordinates(int input)
 
 int decodeCoordenates(int x, int y)
 {
-    if (x < 0 || x > 7)
-        return -1; // wrong coordinates
-    if (y < 0 || y > 7)
-        return -1; // wrong coordinates
+    if (x < 0)
+        x = 7;
+    if (x > 7)
+        x = 0;
+
+    if (y < 0)
+        y = 7;
+    if (y > 7)
+        y = 0;
     return (x * 8) + y;
+    printf("x %d y %d\n", x, y);
 };
 
-void headMovement(char input, int x, int y)
+void updateSnakeCoordinates(int newCoordinate, _Bool grow)
+{
+    int aux = snake[0];
+    int aux2 = snake[1];
+    snake[0] = newCoordinate;
+
+    for (int i = 1; i < snake[64]; i++)
+    {
+        snake[i] = aux;
+        aux = aux2;
+        aux2 = snake[i + 1];
+        if (grow && i == snake[64] - 1)
+        {
+            snake[i + 1] = aux;
+            snake[64]++;
+            break;
+        }
+    }
+}
+
+void headMovementUpdate(char input, int x, int y)
 {
     int output = -1;
     int oldPos = decodeCoordenates(x, y);
@@ -87,22 +112,25 @@ void headMovement(char input, int x, int y)
     {
     case 'a':
         output = decodeCoordenates(x, y - 1);
-        snake[output] = output;      // once this pos is updated, res or snake follows same track
+        updateSnakeCoordinates(output, false);
         codeIntoCoordinates(output); // updates new head coordinates automaticaly
         printf("Move left, led number:%d. Coordinates: (%d,%d)\n", output, horizontal, vertical);
         break;
     case 's':
         output = decodeCoordenates(x + 1, y);
+        updateSnakeCoordinates(output, false);
         codeIntoCoordinates(output);
         printf("Move down, led number:%d. Coordinates: (%d,%d)\n", output, horizontal, vertical);
         break;
     case 'w':
         output = decodeCoordenates(x - 1, y);
+        updateSnakeCoordinates(output, false);
         codeIntoCoordinates(output);
         printf("Move up, led number:%d. Coordinates: (%d,%d)\n", output, horizontal, vertical);
         break;
     case 'd':
         output = decodeCoordenates(x, y + 1);
+        updateSnakeCoordinates(output, false);
         codeIntoCoordinates(output);
         printf("Move right, led number:%d. Coordinates: (%d,%d)\n", output, horizontal, vertical);
         break;
@@ -113,41 +141,35 @@ void headMovement(char input, int x, int y)
     // return output;
 }
 
-void updateSnakeTracker(int newIndex)
+static void updateLed(void)
 {
-    for (size_t i = snake[63]; i >= 0; i++)
+    for (int i = 0; i < snake[64]; i++)
     {
-        snakeSlotTracker[i] = snakeSlotTracker[i - 1];
+        led_strip_set_pixel(led_strip, snake[i], snakeR / 2, snakeG / 2, snakeB / 2);
     }
+    led_strip_refresh(led_strip);
 }
 
-static void updateLedWithCoordinates(int vertCords, int horiCords, bool erase)
+static void updateLedOff(void)
 {
-    if (erase)
-    {
-        led_strip_set_pixel(led_strip, decodeCoordenates(vertCords, horiCords), 0, 0, 0);
-        led_strip_refresh(led_strip);
-    }
-    else
-    {
-        led_strip_set_pixel(led_strip, decodeCoordenates(vertCords, horiCords), snakeR, snakeG, snakeB);
-        led_strip_refresh(led_strip);
-    }
+    printf("Position that will be erased %d\n", snake[snake[64] - 1]);
+    led_strip_set_pixel(led_strip, snake[snake[64] - 1], 0, 0, 0);
+    led_strip_refresh(led_strip);
 }
 
-static void updateLedWithIndex(int indexCoord, bool erase)
-{
-    if (erase)
-    {
-        led_strip_set_pixel(led_strip, indexCoord, 0, 0, 0);
-        led_strip_refresh(led_strip);
-    }
-    else
-    {
-        led_strip_set_pixel(led_strip, indexCoord, snakeR, snakeG, snakeB);
-        led_strip_refresh(led_strip);
-    }
-}
+// static void updateLedWithIndex(int indexCoord, bool erase)
+// {
+//     if (erase)
+//     {
+//         led_strip_set_pixel(led_strip, indexCoord, 0, 0, 0);
+//         led_strip_refresh(led_strip);
+//     }
+//     else
+//     {
+//         led_strip_set_pixel(led_strip, indexCoord, snakeR, snakeG, snakeB);
+//         led_strip_refresh(led_strip);
+//     }
+// }
 // static void updateLed(char userInput)
 // {
 //     // reset last
@@ -212,20 +234,25 @@ static void configure_led(void)
 
 void app_main(void)
 {
-    snake[64] = 2; // initial snake size
-    snakeSlotTracker[0] = 36;
-    snakeSlotTracker[1] = 35;
+    snake[64] = 4; // initial snake size
+    snake[0] = 36;
+    snake[1] = 35;
+    snake[2] = 34;
+    snake[3] = 33;
+
     /* Configure the peripheral according to the LED type */
     configure_led();
 
-    led_strip_set_pixel(led_strip, tail, snakeR, snakeG, snakeB); // cola inicial
-    led_strip_set_pixel(led_strip, 36, snakeR, snakeG, snakeB);   // cabeza inicial
+    // led_strip_set_pixel(led_strip, tail, snakeR, snakeG, snakeB); // cola inicial
+    // led_strip_set_pixel(led_strip, 36, snakeR, snakeG, snakeB);   // cabeza inicial
 
     led_strip_refresh(led_strip);
 
     for (int j = 0; j < sizeof(inputString) - 1; j++)
     {
-        updateLed(inputString[j]);
+        headMovementUpdate(inputString[j], horizontal, vertical);
+        updateLed();
+        updateLedOff();
         vTaskDelay(50);
     }
 
