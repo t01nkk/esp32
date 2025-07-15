@@ -27,7 +27,8 @@ static led_strip_handle_t led_strip;
 
 char inputString[64] = {'s', 's', 's', 's', 'd', 'd', 'd', 'd', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 's', 's', 's', 's', 's', 's', 's', 'd', 'd', 'd', 'd', 'd', 'd', 'd', 'w', 'w', 'w', 'w', 'w', 'w', 'w', '\0'};
 
-int lastIndex = 34;
+int lastIndex;
+bool updated = false;
 float brightness = 0.5;
 int output = -1;
 
@@ -57,7 +58,7 @@ int codeIntoCoordinates(int input)
     return 0;
 }
 
-int decodeCoordenates(int x, int y)
+int decodeCoordinates(int x, int y)
 {
     printf("x %d y %d\n", x, y);
     if (x < 0)
@@ -76,7 +77,7 @@ bool updateSnakeCoordinates(int newCoordinate, _Bool grow)
 {
     if (newCoordinate == snake[1])
     {
-        printf("Went through weth eth. %d = %d\n", newCoordinate, snake[1]);
+        printf(" Ilegal moove NC %d = BH %d .. cant go backwards m'dude\n", newCoordinate, snake[1]);
         return false;
     }
     int aux = snake[0];
@@ -100,38 +101,37 @@ bool updateSnakeCoordinates(int newCoordinate, _Bool grow)
 
 void headMovementUpdate(char input, int x, int y)
 {
-    bool updated;
+
     int output = -1;
-    // int oldPos = decodeCoordenates(x, y);
     switch (input)
     {
     case 'a':
-        output = decodeCoordenates(x, y - 1);
+        output = decodeCoordinates(x, y - 1);
         updated = updateSnakeCoordinates(output, false);
+        printf("Move left, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         if (updated)
             codeIntoCoordinates(output);
-        printf("Move left, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         break;
     case 's':
-        output = decodeCoordenates(x + 1, y);
+        output = decodeCoordinates(x + 1, y);
         updated = updateSnakeCoordinates(output, false);
+        printf("Move down, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         if (updated)
             codeIntoCoordinates(output);
-        printf("Move down, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         break;
     case 'w':
-        output = decodeCoordenates(x - 1, y);
+        output = decodeCoordinates(x - 1, y);
         updated = updateSnakeCoordinates(output, false);
+        printf("Move up, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         if (updated)
             codeIntoCoordinates(output);
-        printf("Move up, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         break;
     case 'd':
-        output = decodeCoordenates(x, y + 1);
+        output = decodeCoordinates(x, y + 1);
         updated = updateSnakeCoordinates(output, false);
+        printf("Move right, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         if (updated)
             codeIntoCoordinates(output);
-        printf("Move right, success %s, led number: %d. Coordinates: (%d,%d)\n", updated ? "true" : "false", output, horizontal, vertical);
         break;
 
     default:
@@ -145,13 +145,14 @@ static void updateLed(void)
     {
         led_strip_set_pixel(led_strip, snake[i], snakeR, snakeG, snakeB);
     }
+    lastIndex = snake[snake[64] - 1];
     led_strip_refresh(led_strip);
 }
 
 static void updateLedOff(void)
 {
-    printf("Position that will be erased %d\n", snake[snake[64] - 1]);
-    led_strip_set_pixel(led_strip, snake[snake[64] - 1], 0, 0, 0);
+    printf("Clear led position %d\n", lastIndex);
+    led_strip_set_pixel(led_strip, lastIndex, 0, 0, 0);
     led_strip_refresh(led_strip);
 }
 
@@ -204,18 +205,15 @@ static void configure_led(void)
 
 void app_main(void)
 {
-    snake[64] = 5; // initial snake size
+    snake[64] = 5;
     snake[0] = 36;
     snake[1] = 35;
     snake[2] = 34;
     snake[3] = 33;
-    snake[3] = 32;
-
+    snake[4] = 32;
+    lastIndex = snake[64];
     /* Configure the peripheral according to the LED type */
     configure_led();
-
-    // led_strip_set_pixel(led_strip, tail, snakeR, snakeG, snakeB); // cola inicial
-    // led_strip_set_pixel(led_strip, 36, snakeR, snakeG, snakeB);   // cabeza inicial
 
     led_strip_refresh(led_strip);
 
@@ -223,8 +221,10 @@ void app_main(void)
     {
         headMovementUpdate(inputString[j], horizontal, vertical);
         updateLed();
-        updateLedOff();
+        if (updated)
+            updateLedOff();
         vTaskDelay(30);
+        updated = false;
     }
 
     // clear all leds
